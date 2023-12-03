@@ -2,7 +2,7 @@ import express, {Request, Response} from 'express';
 import { Review } from '../db/models/review';
 
 const router = express.Router()
-
+//Ruta para obtener todas las reviews
 router.get('/', async (req: Request, res: Response) => {
     try {
       const reviews = await Review.find({});
@@ -11,7 +11,21 @@ router.get('/', async (req: Request, res: Response) => {
       return res.status(500).json({ error: 'Error al obtener las reseñas.' });
     }
   });
-
+// Ruta para obtener detalles de una reseña por ID (GET /reviews/{id})
+router.get('/:id', async (req: Request, res: Response) => {
+    try {
+      const review = await Review.findById(req.params.id);
+  
+      if (!review) {
+        return res.status(404).json({ error: 'Reseña no encontrada.' });
+      }
+  
+      return res.status(200).json(review);
+    } catch (error) {
+      return res.status(500).json({ error: 'Error al obtener la reseña.' });
+    }
+  });
+  
 // Ruta para obtener todas las reseñas asociadas a un curso por ID (GET /reviews/by-course/{course_id})
 router.get('/course/:course_id', async (req: Request, res: Response) => {
 try {
@@ -45,6 +59,7 @@ router.get('/average-score/:course_id', async (req: Request, res: Response) => {
     }
 });
 
+// Ruta para crear una nueva reseña y asociarla a un curso (POST /reviews)
 router.post('/', async (req: Request, res: Response) => {
     try {
       const { title, description, score, course_id } = req.body;
@@ -57,6 +72,29 @@ router.post('/', async (req: Request, res: Response) => {
       return res.status(201).json(savedReview);
     } catch (error) {
       return res.status(500).json({ error: 'Error al crear la reseña.' });
+    }
+  });
+
+// Ruta para actualizar una reseña y, opcionalmente, cambiar el curso asociado (PUT /reviews/{id})
+router.put('/:id', async (req: Request, res: Response) => {
+    try {
+      const { title, description, score, course_id } = req.body;
+      
+      // Verifica que el course_id proporcionado exista o realiza las validaciones necesarias
+  
+      const updatedReview = await Review.findByIdAndUpdate(
+        req.params.id,
+        { title, description, score, course_id },
+        { new: true }
+      );
+  
+      if (!updatedReview) {
+        return res.status(404).json({ error: 'Reseña no encontrada.' });
+      }
+  
+      return res.status(200).json(updatedReview);
+    } catch (error) {
+      return res.status(500).json({ error: 'Error al actualizar la reseña.' });
     }
   });
 /*
