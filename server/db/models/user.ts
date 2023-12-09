@@ -40,4 +40,4 @@ userSchema.statics.build = (user: IUser) => {
 
 const User = mongoose.model<UserDoc, UserModelInterface>('User', userSchema)
 
-export { User }
+export { User , UserDoc}
