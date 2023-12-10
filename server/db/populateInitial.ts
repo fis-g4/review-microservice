@@ -58,7 +58,14 @@ async function createConsts() {
 }
 
 function populateReviews() {
-    
+    Review.build({
+        title: "Muy buena profesora",
+        description: "Me ha gustado mucho",
+        score: 5,
+        course: null,
+        creator: null,
+        material: null,     
+    }).save();
 }
 async function populateDB() {
 
@@ -69,6 +76,7 @@ async function populateDB() {
         Review.collection.countDocuments().then((count) => {
             if (count === 0) {
                 createConsts()
+                populateReviews()
             }
         })
     }

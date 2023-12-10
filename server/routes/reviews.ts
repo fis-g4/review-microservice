@@ -4,12 +4,14 @@ import { Material } from '../db/models/material';
 import mongoose from 'mongoose';
 import { User } from '../db/models/user';
 import { Course } from '../db/models/course';
+//import { connectToRabbitMQ, publishToQueue } from './rabbitmq';
+
 
 const router = express.Router()
 
 
 //Ruta para crear las reviews, body: title, description, score, material, user, course
-router.post('/', async (req, res) => {
+router.post('/new', async (req, res) => {
     try {
       // Validar la existencia del curso
       if (req.body.course && !mongoose.isValidObjectId(req.body.course)) {
@@ -75,6 +77,7 @@ try {
 //Obtener una reseña por su id
 router.get('/:id', async (req, res) => {
 try {
+ 
     const review = await Review.findById(req.params.id);
     if (!review) {
     return res.status(404).send('Reseña no encontrada');
@@ -90,6 +93,44 @@ try {
 
 router.put('/:id', async (req, res) => {
 try {
+  // Validar la existencia del curso
+  if (req.body.course && !mongoose.isValidObjectId(req.body.course)) {
+    return res.status(400).send('ID de curso no válido');
+  }
+
+  // Validar la existencia del creador (usuario)
+  if (req.body.creator && !mongoose.isValidObjectId(req.body.creator)) {
+    return res.status(400).send('ID de usuario no válido');
+  }
+
+  // Validar la existencia del material
+  if (req.body.material && !mongoose.isValidObjectId(req.body.material)) {
+    return res.status(400).send('ID de material no válido');
+  }
+
+  // Verificar si el curso existe en la base de datos
+  if (req.body.course) {
+    const courseExists = await Course.exists({ _id: req.body.course });
+    if (!courseExists) {
+      return res.status(404).send('El curso no existe en la base de datos');
+    }
+  }
+
+  // Verificar si el creador (usuario) existe en la base de datos
+  if (req.body.creator) {
+    const userExists = await User.exists({ _id: req.body.creator });
+    if (!userExists) {
+      return res.status(404).send('El usuario no existe en la base de datos');
+    }
+  }
+
+  // Verificar si el material existe en la base de datos
+  if (req.body.material) {
+    const materialExists = await Material.exists({ _id: req.body.material });
+    if (!materialExists) {
+      return res.status(404).send('El material no existe en la base de datos');
+    }
+  }
     const review = await Review.findById(req.params.id);
     if (!review) {
     return res.status(404).send('Reseña no encontrada');
@@ -108,7 +149,7 @@ try {
   
 //Elimina una reseña por su id
 
-router.delete('/:id', async (req, res) => {
+router.delete('/remove/:id', async (req, res) => {
 try {
     const review = await Review.findById(req.params.id);
     if (!review) {
