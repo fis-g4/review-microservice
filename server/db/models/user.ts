@@ -2,7 +2,7 @@ import mongoose from 'mongoose'
 
 const { Schema } = mongoose
 
-interface IUser{
+export interface IUser{
     name: string;
     email: string;
     password: string;
@@ -40,4 +40,4 @@ userSchema.statics.build = (user: IUser) => {
 
 const User = mongoose.model<UserDoc, UserModelInterface>('User', userSchema)
 
-export { User }
+export { User , UserDoc}

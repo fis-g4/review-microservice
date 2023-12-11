@@ -20,5 +20,5 @@ app.listen(port, () => {
     console.log(`Review microservice listening on port ${port}`)
 })
 
-app.use('/users', users)
-app.use('/reviews', reviews)
+app.use('/api/v1/users', users)
+app.use('/api/v1/reviews', reviews)

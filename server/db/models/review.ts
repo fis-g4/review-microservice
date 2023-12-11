@@ -1,19 +1,25 @@
 import mongoose from 'mongoose'
-
+import { ICourse } from './course';
+import { IUser } from './user';
+import { IMaterial } from './material';
 const { Schema } = mongoose
 
 interface IReview{
     title: string;
     description: string;
     score: number;
-    course_id: string;
+    course: ICourse | null;
+    creator: IUser | null;
+    material: IMaterial | null;
 }
 
 interface ReviewDoc extends mongoose.Document {
     title: string;
     description: string;
     score: number;
-    course_id: string;
+    course: ICourse | null;
+    creator: IUser | null;
+    material: IMaterial | null;
 }
 
 interface ReviewModelInterface extends mongoose.Model<ReviewDoc> {
@@ -34,9 +40,17 @@ const reviewSchema = new Schema({
         type: Number,
         //required: true,
     },
-    course_id: {
-        type: String,
-        //required: true,
+    course: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'Course',
+    },
+    creator: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'User',
+    },
+    material: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'Material',
     },
 })
 
@@ -46,4 +60,4 @@ reviewSchema.statics.build = (review: IReview) => {
 
 const Review = mongoose.model<ReviewDoc, ReviewModelInterface>('Review', reviewSchema)
 
-export { Review }
+export { Review , IReview}

@@ -9,6 +9,9 @@
     "mongoose": "^8.0.2"
   },
   "devDependencies": {
-    "concurrently": "^8.2.2"
+    "@types/jest": "^29.5.11",
+    "@types/supertest": "^2.0.16",
+    "concurrently": "^8.2.2",
+    "supertest": "^6.3.3"
   }
 }

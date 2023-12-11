@@ -1,127 +1,193 @@
 import express, {Request, Response} from 'express';
 import { Review } from '../db/models/review';
+import { Material } from '../db/models/material';
+import mongoose from 'mongoose';
+import { User } from '../db/models/user';
+import { Course } from '../db/models/course';
+//import { connectToRabbitMQ, publishToQueue } from './rabbitmq';
+
 
 const router = express.Router()
-//Ruta para obtener todas las reviews
-router.get('/', async (req: Request, res: Response) => {
+
+
+//Ruta para crear las reviews, body: title, description, score, material, user, course
+router.post('/new', async (req, res) => {
     try {
-      const reviews = await Review.find({});
-      return res.status(200).json(reviews);
-    } catch (error) {
-      return res.status(500).json({ error: 'Error al obtener las reseñas.' });
-    }
-  });
-// Ruta para obtener detalles de una reseña por ID (GET /reviews/{id})
-router.get('/:id', async (req: Request, res: Response) => {
-    try {
-      const review = await Review.findById(req.params.id);
-  
-      if (!review) {
-        return res.status(404).json({ error: 'Reseña no encontrada.' });
+      // Validar la existencia del curso
+      if (req.body.course && !mongoose.isValidObjectId(req.body.course)) {
+        return res.status(400).send('ID de curso no válido');
       }
   
-      return res.status(200).json(review);
-    } catch (error) {
-      return res.status(500).json({ error: 'Error al obtener la reseña.' });
-    }
-  });
-  
-// Ruta para obtener todas las reseñas asociadas a un curso por ID (GET /reviews/by-course/{course_id})
-router.get('/course/:course_id', async (req: Request, res: Response) => {
-try {
-    const reviews = await Review.find({ course_id: req.params.course_id });
-
-    if (reviews.length === 0) {
-    return res.status(404).json({ error: 'No hay reseñas asociadas a este curso.' });
-    }
-
-    return res.status(200).json(reviews);
-} catch (error) {
-    return res.status(500).json({ error: 'Error al obtener las reseñas del curso.' });
-}
-});  
-
-// Ruta para obtener la puntuación media de todas las reseñas asociadas a un curso por ID (GET /reviews/average-score/{course_id})
-router.get('/average-score/:course_id', async (req: Request, res: Response) => {
-    try {
-      const averageScore = await Review.aggregate([
-        { $match: { course_id: req.params.course_id } }, // Filtra por course_id
-        { $group: { _id: null, averageScore: { $avg: '$score' } } },
-      ]);
-  
-      if (averageScore.length === 0) {
-        return res.status(404).json({ error: 'No hay reseñas para calcular el promedio.' });
+      // Validar la existencia del creador (usuario)
+      if (req.body.creator && !mongoose.isValidObjectId(req.body.creator)) {
+        return res.status(400).send('ID de usuario no válido');
       }
   
-      return res.status(200).json({ averageScore: averageScore[0].averageScore });
+      // Validar la existencia del material
+      if (req.body.material && !mongoose.isValidObjectId(req.body.material)) {
+        return res.status(400).send('ID de material no válido');
+      }
+  
+      // Verificar si el curso existe en la base de datos
+      if (req.body.course) {
+        const courseExists = await Course.exists({ _id: req.body.course });
+        if (!courseExists) {
+          return res.status(404).send('El curso no existe en la base de datos');
+        }
+      }
+  
+      // Verificar si el creador (usuario) existe en la base de datos
+      if (req.body.creator) {
+        const userExists = await User.exists({ _id: req.body.creator });
+        if (!userExists) {
+          return res.status(404).send('El usuario no existe en la base de datos');
+        }
+      }
+  
+      // Verificar si el material existe en la base de datos
+      if (req.body.material) {
+        const materialExists = await Material.exists({ _id: req.body.material });
+        if (!materialExists) {
+          return res.status(404).send('El material no existe en la base de datos');
+        }
+      }
+  
+      // Si todas las validaciones son exitosas, construir y guardar la revisión
+      const review = Review.build(req.body);
+      await review.save();
+      res.status(201).send(review);
     } catch (error) {
-      return res.status(500).json({ error: 'Error al calcular el promedio de puntuación.' });
+      console.error(error);
+      res.status(500).send('Error al crear la revisión');
     }
 });
+  
 
-// Ruta para crear una nueva reseña y asociarla a un curso (POST /reviews)
-router.post('/', async (req: Request, res: Response) => {
-    try {
-      const { title, description, score, course_id } = req.body;
-  
-      // Verifica que el course_id proporcionado exista o realiza las validaciones necesarias
-  
-      const newReview = new Review({ title, description, score, course_id });
-      const savedReview = await newReview.save();
-  
-      return res.status(201).json(savedReview);
-    } catch (error) {
-      return res.status(500).json({ error: 'Error al crear la reseña.' });
+//Obtener todas las reseñas
+router.get('/', async (req, res) => {
+try {
+    const reviews = await Review.find({});
+    res.status(200).send(reviews);
+} catch (error) {
+    console.error(error);
+    res.status(500).send('Error al obtener las reseñas');
+}
+});
+
+//Obtener una reseña por su id
+router.get('/:id', async (req, res) => {
+try {
+ 
+    const review = await Review.findById(req.params.id);
+    if (!review) {
+    return res.status(404).send('Reseña no encontrada');
     }
-  });
+    res.status(200).send(review);
+} catch (error) {
+    console.error(error);
+    res.status(500).send('Error al obtener la reseña');
+}
+});
 
-// Ruta para actualizar una reseña y, opcionalmente, cambiar el curso asociado (PUT /reviews/{id})
-router.put('/:id', async (req: Request, res: Response) => {
-    try {
-      const { title, description, score, course_id } = req.body;
-      
-      // Verifica que el course_id proporcionado exista o realiza las validaciones necesarias
-  
-      const updatedReview = await Review.findByIdAndUpdate(
-        req.params.id,
-        { title, description, score, course_id },
-        { new: true }
-      );
-  
-      if (!updatedReview) {
-        return res.status(404).json({ error: 'Reseña no encontrada.' });
-      }
-  
-      return res.status(200).json(updatedReview);
-    } catch (error) {
-      return res.status(500).json({ error: 'Error al actualizar la reseña.' });
+//Actualizar una reseña por su id
+
+router.put('/:id', async (req, res) => {
+try {
+  // Validar la existencia del curso
+  if (req.body.course && !mongoose.isValidObjectId(req.body.course)) {
+    return res.status(400).send('ID de curso no válido');
+  }
+
+  // Validar la existencia del creador (usuario)
+  if (req.body.creator && !mongoose.isValidObjectId(req.body.creator)) {
+    return res.status(400).send('ID de usuario no válido');
+  }
+
+  // Validar la existencia del material
+  if (req.body.material && !mongoose.isValidObjectId(req.body.material)) {
+    return res.status(400).send('ID de material no válido');
+  }
+
+  // Verificar si el curso existe en la base de datos
+  if (req.body.course) {
+    const courseExists = await Course.exists({ _id: req.body.course });
+    if (!courseExists) {
+      return res.status(404).send('El curso no existe en la base de datos');
     }
-  });
-/*
-router.post('/login', async (req: Request, res: Response) => {
-    const { email, password }: FormInputs = req.body
+  }
 
-    const user = await Review.findOne({email, password});
+  // Verificar si el creador (usuario) existe en la base de datos
+  if (req.body.creator) {
+    const userExists = await User.exists({ _id: req.body.creator });
+    if (!userExists) {
+      return res.status(404).send('El usuario no existe en la base de datos');
+    }
+  }
 
-    if (!user) {
-        return res.status(404).send('User Not Found!')
+  // Verificar si el material existe en la base de datos
+  if (req.body.material) {
+    const materialExists = await Material.exists({ _id: req.body.material });
+    if (!materialExists) {
+      return res.status(404).send('El material no existe en la base de datos');
+    }
+  }
+    const review = await Review.findById(req.params.id);
+    if (!review) {
+    return res.status(404).send('Reseña no encontrada');
     }
 
-    return res.status(200).json(user)
-})
-router.post('/', async (req: Request, res: Response) => {
-  const { email, password }: FormInputs = req.body
+    // Actualizar las propiedades según lo que venga en el cuerpo de la solicitud
+    review.set(req.body);
+    await review.save();
 
-  let name = "Test User";
+    res.status(200).send(review);
+} catch (error) {
+    console.error(error);
+    res.status(500).send('Error al actualizar la reseña');
+}
+});
+  
+//Elimina una reseña por su id
 
-  const user = Review.build({
-    name: name, 
-    email: email, 
-    password: password});
+router.delete('/remove/:id', async (req, res) => {
+try {
+    const review = await Review.findById(req.params.id);
+    if (!review) {
+    return res.status(404).send('Reseña no encontrada');
+    }
 
-  await user.save();
+    await review.deleteOne();
+    res.status(204).send();
+} catch (error) {
+    console.error(error);
+    res.status(500).send('Error al eliminar la revisión');
+}
+});
 
-  return res.status(201).json(user)
-})*/
+//Buscar reseñas por el id del curso
+
+router.get('/course/:courseId', async (req, res) => {
+try {
+    const reviews = await Review.find({ course: req.params.courseId });
+    res.status(200).send(reviews);
+} catch (error) {
+    console.error(error);
+    res.status(500).send('Error al obtener las reseñas por curso');
+}
+});
+
+//Buscar reseñas por el id del usuario (profesor)
+router.get('/user/:userId', async (req, res) => {
+try {
+    const reviews = await Review.find({ user: req.params.userId });
+    res.status(200).send(reviews);
+} catch (error) {
+    console.error(error);
+    res.status(500).send('Error al obtener las reseñas por usuario');
+}
+});
+
+
 
 export default router
+
