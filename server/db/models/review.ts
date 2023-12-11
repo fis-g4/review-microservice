@@ -60,4 +60,4 @@ reviewSchema.statics.build = (review: IReview) => {
 
 const Review = mongoose.model<ReviewDoc, ReviewModelInterface>('Review', reviewSchema)
 
-export { Review }
+export { Review , IReview}

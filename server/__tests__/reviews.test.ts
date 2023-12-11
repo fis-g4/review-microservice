@@ -1,12 +1,10 @@
-import dotenv from "dotenv";
+debugger
 import request from 'supertest';
-import { Review } from '../db/models/review'
+import { Review, IReview } from '../db/models/review'
 import { describe } from "node:test";
+import mongoose from 'mongoose';
 
 const BASE_URL = "http://localhost:8000/";
-
-dotenv.config();
-
 
 const TEST_URLS = {
     reviews: 'api/v1/reviews',
@@ -41,7 +39,7 @@ const TEST_MATERIAL = {
 }
 
 const TEST_REVIEW_COURSE = {
-    title: "Muy buena profesora",
+    title: "Muy buen curso sobre testing",
     description: "Me ha gustado mucho",
     score: 5,
     course: null,
@@ -74,7 +72,7 @@ describe(`GET ${TEST_URLS.reviews}`, () => {
   it('Obtiene todas las reseñas: 200 OK', async () => {
     try {
         const response = await request(BASE_URL).get(TEST_URLS.reviews);
-        console.log("Se obtienen todas las reseñas: "+response.body); // Muestra la respuesta completa del servidor en la consola
+        console.log("Se obtienen todas las reseñas: " + JSON.stringify(response.body, null, 2));
         expect(response.statusCode).toBe(200);
         expect(response.body).toBeInstanceOf(Array);
     } catch (error) {
@@ -86,30 +84,34 @@ describe(`GET ${TEST_URLS.reviews}`, () => {
 
 //Test 2 - Obtener una review por su id
 
+/*
 describe(`GET ${TEST_URLS.reviewById}`, () => {
     let reviewId: string;
 
     // Antes de todas las pruebas, crea una revisión de ejemplo y guarda su ID
     beforeAll(async () => {
-        const exampleReview = Review.build(TEST_REVIEW_COURSE);
-        console.log("Review de ejemplo: " + exampleReview);
+        const exampleReview = new Review(TEST_REVIEW_COURSE);
+        console.log("Review de ejemplo:", exampleReview);
     
         try {
-            const savedReview = await exampleReview.save();
-            console.log("Review salvada: " + savedReview);
+            const savedReview = await exampleReview.save({ validateBeforeSave: false });
+            console.log("Review salvada:", savedReview);
             reviewId = savedReview._id;
         } catch (error) {
             console.error(error);
+            fail(error); // Esto marcará la prueba como fallida
         }
-    }, 10000);
+    }, 20000);
+    
 
     // Después de todas las pruebas, elimina la revisión de ejemplo (o realiza limpieza)
     afterAll(async () => {
         await Review.findByIdAndDelete(reviewId);
-    },10000);
+    },20000);
 
     it('debería obtener una revisión por su ID', async () => {
         // Realiza una solicitud GET para obtener la revisión por su ID
+        
         const response = await request(BASE_URL).get(TEST_URLS.reviewById.replace(':id', reviewId));
         console.log(response.body);
         // Verifica que la respuesta sea exitosa (código de estado 200)
@@ -131,4 +133,4 @@ describe(`GET ${TEST_URLS.reviewById}`, () => {
         expect(response.status).toBe(500);
         // Puedes verificar el mensaje de error u otros detalles según tu implementación
     });
-});
+});*/

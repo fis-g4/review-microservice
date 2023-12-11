@@ -53,7 +53,7 @@ router.post('/new', async (req, res) => {
       }
   
       // Si todas las validaciones son exitosas, construir y guardar la revisión
-      const review = await Review.build(req.body);
+      const review = Review.build(req.body);
       await review.save();
       res.status(201).send(review);
     } catch (error) {
