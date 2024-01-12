@@ -79,7 +79,9 @@ async function populateDB() {
                 populateReviews()
             }
         })
-    }else if(process.env.npm_config_run_tests=== 'true')
+    }else if(process.env.npm_config_run_tests=== 'true'){
+        
+    }
 
     console.log('Populated!');
 }
